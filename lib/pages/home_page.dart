@@ -2,10 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import './chat_page.dart';
 import '../models/user.dart';
 import '../shared/adaptive_activity_indicator.dart';
+
+FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 class HomePage extends StatefulWidget {
   @override
@@ -23,7 +27,25 @@ class HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
+    var initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    var initializationSettingsIOS = IOSInitializationSettings();
+    var initializationSettings = InitializationSettings(
+        initializationSettingsAndroid, initializationSettingsIOS);
+
+    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+    flutterLocalNotificationsPlugin.initialize(initializationSettings,
+        selectNotification: onSelectNotification);
+
     _initUser();
+  }
+
+  Future onSelectNotification(String payload) async {
+    if (payload != null) {
+      debugPrint('[onSelectNotification] $payload');
+    }
+    debugPrint('[onSelectNotification]');
   }
 
   void _initUser() async {
@@ -41,12 +63,54 @@ class HomePageState extends State<HomePage> {
     _initUser();
   }
 
+  Future _showNotificationWithDefaultSound() async {
+    var androidPlatformChannelSpecifics = new AndroidNotificationDetails(
+        'Room', 'Room update', 'Updates about Room status',
+        importance: Importance.Max, priority: Priority.High);
+    var iOSPlatformChannelSpecifics = new IOSNotificationDetails();
+    var platformChannelSpecifics = new NotificationDetails(
+        androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'New Post',
+      'How to Show Notification in Flutter',
+      platformChannelSpecifics,
+      payload: 'Default_Sound',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: <Widget>[
+                RaisedButton(
+                  onPressed: _showNotificationWithDefaultSound,
+                  child: Text('Show Notification With Sound'),
+                ),
+                SizedBox(
+                  height: 30.0,
+                ),
+                RaisedButton(
+                  onPressed: () {},
+                  child: Text('Show Notification Without Sound'),
+                ),
+                SizedBox(
+                  height: 30.0,
+                ),
+                RaisedButton(
+                  onPressed: () {},
+                  child: Text('Show Notification With Default Sound'),
+                ),
+              ],
+            ),
+          ),
           Text(
             'Your name is ${user?.username}',
             style: Theme.of(context).textTheme.title,
